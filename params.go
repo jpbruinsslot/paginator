@@ -10,7 +10,7 @@ import (
 // filtering from the queryparameters that are passed from a http request. It
 // will tranform the input values to values that can be used for querying the
 // storage backend you're using.
-func ParseQueryParams(r *http.Request) (filter map[string]interface{}, ordering string, offset int, limit int) {
+func ParseQueryParams(r *http.Request) (filter map[string]interface{}, search string, ordering string, offset int, limit int) {
 	// r.URL.Query() returns a map[string][]string which contain the values. We
 	// will first try to get the pagination, and ordering parameters and remove
 	// them from the map. What is left will be the filtering parameters.
@@ -26,6 +26,9 @@ func ParseQueryParams(r *http.Request) (filter map[string]interface{}, ordering 
 
 	// Ordering
 	queryparams, ordering = transformOrdering(queryparams)
+
+	// Search
+	queryparams, search = transformSearching(queryparams)
 
 	// Filtering
 	filter = transformFiltering(queryparams)
@@ -100,6 +103,27 @@ func transformOrdering(queryparams map[string][]string) (map[string][]string, st
 	delete(queryparams, "ordering")
 
 	return queryparams, retOrdering
+}
+
+// transformSearching will transform:
+//
+//		map[string][]string{"search": ["hello, world"]}}
+//
+// to:
+//
+//		var searchTerm string = "hello, world"
+//
+func transformSearching(queryparams map[string][]string) (map[string][]string, string) {
+
+	var searchTerm string
+	search := queryparams["search"]
+
+	if search != nil {
+		searchTerm = search[0]
+	}
+	delete(queryparams, "search")
+
+	return queryparams, searchTerm
 }
 
 // transformOrdering will transform:
